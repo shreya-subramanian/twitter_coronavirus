@@ -37,7 +37,7 @@ hashtags = [
 
 # initialize counters
 counter_lang = defaultdict(lambda: Counter())
-
+country_code_counter=defaultdict(lambda: Counter())
 # open the zipfile
 with zipfile.ZipFile(args.input_path) as archive:
 
@@ -60,9 +60,19 @@ with zipfile.ZipFile(args.input_path) as archive:
                 # search hashtags
                 for hashtag in hashtags:
                     lang = tweet['lang']
+                    if tweet.get('place') is not None and tweet['place'].get('country_code') is not None:
+                        country_code=tweet['place']['country_code']
+                    else:
+                        country_code="overseas"
+
+                    if tweet['place'] is None or country_code is None:
+                        country_code="Overseas/space station"
                     if hashtag in text:
                         counter_lang[hashtag][lang] += 1
-                    counter_lang['_all'][lang] += 1
+                        country_code_counter[hashtag][country_code]+=1
+                counter_lang['_all'][lang] += 1
+                country_code_counter['_all'][country_code]+=1
+
 
 # open the outputfile
 try:
@@ -72,7 +82,10 @@ except FileExistsError:
 output_path_base = os.path.join(args.output_folder,os.path.basename(args.input_path))
 
 output_path_lang = output_path_base+'.lang'
-print('saving',output_path_lang)
+output_path_country_code=output_path_base+'.country_code'
+print('saving',output_path_lang,output_path_country_code)
 with open(output_path_lang,'w') as f:
     f.write(json.dumps(counter_lang))
+with open(output_path_country_code,'w') as f:
+    f.write(json.dumps(country_code_counter))
 
